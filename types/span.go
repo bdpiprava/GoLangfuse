@@ -49,6 +49,61 @@ func (t *SpanEvent) SetID(id *uuid.UUID) {
 	t.ID = id
 }
 
+// Clone creates a deep copy of the SpanEvent
+func (t *SpanEvent) Clone() LangfuseEvent {
+	if t == nil {
+		return nil
+	}
+
+	clone := &SpanEvent{
+		Name:          t.Name,
+		Level:         t.Level,
+		StatusMessage: t.StatusMessage,
+		Version:       t.Version,
+		Environment:   t.Environment,
+	}
+
+	// Deep copy pointer fields
+	if t.ID != nil {
+		id := *t.ID
+		clone.ID = &id
+	}
+
+	if t.TraceID != nil {
+		traceID := *t.TraceID
+		clone.TraceID = &traceID
+	}
+
+	if t.ParentObservationID != nil {
+		parentID := *t.ParentObservationID
+		clone.ParentObservationID = &parentID
+	}
+
+	if t.StartTime != nil {
+		startTime := *t.StartTime
+		clone.StartTime = &startTime
+	}
+
+	if t.EndTime != nil {
+		endTime := *t.EndTime
+		clone.EndTime = &endTime
+	}
+
+	// Deep copy map
+	if t.Metadata != nil {
+		clone.Metadata = make(map[string]any, len(t.Metadata))
+		for k, v := range t.Metadata {
+			clone.Metadata[k] = deepCopyAny(v)
+		}
+	}
+
+	// Deep copy any fields
+	clone.Input = deepCopyAny(t.Input)
+	clone.Output = deepCopyAny(t.Output)
+
+	return clone
+}
+
 // Error set Level to error and EndTime with status message
 func (t *SpanEvent) Error(statusMessage string) *SpanEvent {
 	t.StatusMessage = statusMessage

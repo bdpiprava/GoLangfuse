@@ -38,3 +38,61 @@ func (t *ScoreEvent) GetID() *uuid.UUID {
 func (t *ScoreEvent) SetID(id *uuid.UUID) {
 	t.ID = id
 }
+
+// Clone creates a deep copy of the ScoreEvent
+func (t *ScoreEvent) Clone() LangfuseEvent {
+	if t == nil {
+		return nil
+	}
+
+	clone := &ScoreEvent{
+		Name:  t.Name,
+		Value: t.Value,
+	}
+
+	// Deep copy pointer fields
+	if t.ID != nil {
+		id := *t.ID
+		clone.ID = &id
+	}
+
+	if t.TraceID != nil {
+		traceID := *t.TraceID
+		clone.TraceID = &traceID
+	}
+
+	if t.SessionID != nil {
+		sessionID := *t.SessionID
+		clone.SessionID = &sessionID
+	}
+
+	if t.ObservationID != nil {
+		observationID := *t.ObservationID
+		clone.ObservationID = &observationID
+	}
+
+	if t.Comment != nil {
+		comment := *t.Comment
+		clone.Comment = &comment
+	}
+
+	if t.DatasetRunID != nil {
+		datasetRunID := *t.DatasetRunID
+		clone.DatasetRunID = &datasetRunID
+	}
+
+	if t.Environment != nil {
+		environment := *t.Environment
+		clone.Environment = &environment
+	}
+
+	// Deep copy map
+	if t.Metadata != nil {
+		clone.Metadata = make(map[string]any, len(t.Metadata))
+		for k, v := range t.Metadata {
+			clone.Metadata[k] = deepCopyAny(v)
+		}
+	}
+
+	return clone
+}

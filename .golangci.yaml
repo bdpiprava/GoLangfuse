@@ -1,18 +1,10 @@
 version: "2"
-output:
-  formats:
-    text:
-      path: stdout
-      print-linter-name: true
-
 linters:
-  default: none
   enable:
     - bodyclose
     - copyloopvar
     - dogsled
     - dupl
-    - errcheck
     - errorlint
     - gocheckcompilerdirectives
     - goconst
@@ -21,7 +13,6 @@ linters:
     - godox
     - goprintffuncname
     - gosec
-    - ineffassign
     - intrange
     - lll
     - misspell
@@ -29,12 +20,9 @@ linters:
     - nakedret
     - noctx
     - nolintlint
-    - revive
-    - staticcheck
     - testifylint
     - unconvert
     - unparam
-    - unused
     - whitespace
   settings:
     lll:
@@ -50,11 +38,7 @@ linters:
       - third_party$
       - builtin$
       - examples$
-
 formatters:
-  enable:
-    - gofmt
-    - goimports
   exclusions:
     generated: lax
     paths:

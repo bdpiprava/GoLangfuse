@@ -214,3 +214,7 @@ func (c *CustomType) GetID() *uuid.UUID {
 }
 
 func (c *CustomType) SetID(*uuid.UUID) {}
+
+func (c *CustomType) Clone() types.LangfuseEvent {
+	return &CustomType{}
+}
