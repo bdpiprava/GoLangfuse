@@ -229,30 +229,7 @@ func (c client) sendEvent(ctx context.Context, request *ingestionRequest) (*inge
 		return nil, ErrEventProcessing.WithCause(err)
 	}
 
-	// Compress payload if it's large enough
-	var body io.Reader
-	var contentEncoding string
-	if len(payload) > compressionThreshold { // Compress if payload > 1KB
-		var compressedBuf bytes.Buffer
-		gzWriter := gzip.NewWriter(&compressedBuf)
-		if _, err := gzWriter.Write(payload); err != nil {
-			gzWriter.Close()
-			return nil, ErrEventProcessing.WithCause(err).WithDetails(map[string]any{
-				"operation": "compression",
-			})
-		}
-		if err := gzWriter.Close(); err != nil {
-			return nil, ErrEventProcessing.WithCause(err).WithDetails(map[string]any{
-				"operation": "compression_close",
-			})
-		}
-		body = &compressedBuf
-		contentEncoding = "gzip"
-	} else {
-		body = bytes.NewBuffer(payload)
-	}
-
-	httpRequest, err := http.NewRequestWithContext(ctx, http.MethodPost, apiPath, body)
+	httpRequest, err := http.NewRequestWithContext(ctx, http.MethodPost, apiPath, bytes.NewBuffer(payload))
 	if err != nil {
 		log.WithError(err).Error("failed to create langfuse request")
 		return nil, ErrRequestFailed.WithCause(err)
@@ -261,9 +238,6 @@ func (c client) sendEvent(ctx context.Context, request *ingestionRequest) (*inge
 	httpRequest.SetBasicAuth(c.config.PublicKey, c.config.SecretKey)
 	httpRequest.Header.Set("Content-Type", "application/json")
 	httpRequest.Header.Set("Accept-Encoding", "gzip")
-	if contentEncoding != "" {
-		httpRequest.Header.Set("Content-Encoding", contentEncoding)
-	}
 
 	resp, err := c.client.Do(httpRequest)
 	if err != nil {
