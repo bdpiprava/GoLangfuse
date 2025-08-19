@@ -21,6 +21,8 @@ const maxParallelItem = 512
 // Langfuse an interface to send ingestion events to langfuse in async manner
 // Event is added to the queue and then processor is sending it to the langfuse
 type Langfuse interface {
+	// Add adds event to the channel and returns the event unique ID, generating one if missing.
+	Add(event types.LangfuseEvent) *uuid.UUID
 	// AddEvent adds event to the channel and returns the event unique ID, generating one if missing.
 	AddEvent(ctx context.Context, event types.LangfuseEvent) *uuid.UUID
 	// Stop gracefully shuts down the service and flushes remaining events
@@ -83,10 +85,15 @@ func NewWithClient(config *config.Langfuse, customHTTPClient *http.Client) Langf
 	return eventManager
 }
 
+func (l *langfuseService) Add(event types.LangfuseEvent) *uuid.UUID {
+	return l.AddEvent(context.Background(), event)
+}
+
 // AddEvent adds event to the channel and returns the event unique ID, generating one if missing.
 func (l *langfuseService) AddEvent(ctx context.Context, event types.LangfuseEvent) *uuid.UUID {
-	ensureEventID(event)
-	l.eventChannel <- eventChanItem{ctx: ctx, event: event}
+	cloned := event.Clone()
+	ensureEventID(cloned)
+	l.eventChannel <- eventChanItem{ctx: ctx, event: cloned}
 	l.metricsCollector.IncrementEventsQueued()
 	l.metricsCollector.UpdateQueueMetrics(len(l.eventChannel), maxParallelItem)
 	return event.GetID()

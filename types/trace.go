@@ -49,6 +49,55 @@ func (t *TraceEvent) SetID(id *uuid.UUID) {
 	t.ID = id
 }
 
+// Clone creates a deep copy of the TraceEvent
+func (t *TraceEvent) Clone() LangfuseEvent {
+	if t == nil {
+		return nil
+	}
+
+	clone := &TraceEvent{
+		Name:        t.Name,
+		UserID:      t.UserID,
+		SessionID:   t.SessionID,
+		Release:     t.Release,
+		Version:     t.Version,
+		Public:      t.Public,
+		Environment: t.Environment,
+		ExternalID:  t.ExternalID,
+	}
+
+	// Deep copy pointer fields
+	if t.ID != nil {
+		id := *t.ID
+		clone.ID = &id
+	}
+
+	if t.Timestamp != nil {
+		timestamp := *t.Timestamp
+		clone.Timestamp = &timestamp
+	}
+
+	// Deep copy slice
+	if t.Tags != nil {
+		clone.Tags = make([]string, len(t.Tags))
+		copy(clone.Tags, t.Tags)
+	}
+
+	// Deep copy map
+	if t.Metadata != nil {
+		clone.Metadata = make(map[string]any, len(t.Metadata))
+		for k, v := range t.Metadata {
+			clone.Metadata[k] = deepCopyAny(v)
+		}
+	}
+
+	// Deep copy any fields
+	clone.Input = deepCopyAny(t.Input)
+	clone.Output = deepCopyAny(t.Output)
+
+	return clone
+}
+
 // TraceBuilder provides a fluent interface for building TraceEvent
 type TraceBuilder struct {
 	trace *TraceEvent

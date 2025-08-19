@@ -9,4 +9,6 @@ type LangfuseEvent interface {
 
 	// SetID set event ID
 	SetID(id *uuid.UUID)
+
+	Clone() LangfuseEvent
 }
