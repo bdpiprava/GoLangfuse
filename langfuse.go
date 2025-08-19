@@ -91,8 +91,8 @@ func (l *langfuseService) Add(event types.LangfuseEvent) *uuid.UUID {
 
 // AddEvent adds event to the channel and returns the event unique ID, generating one if missing.
 func (l *langfuseService) AddEvent(ctx context.Context, event types.LangfuseEvent) *uuid.UUID {
+	ensureEventID(event)
 	cloned := event.Clone()
-	ensureEventID(cloned)
 	l.eventChannel <- eventChanItem{ctx: ctx, event: cloned}
 	l.metricsCollector.IncrementEventsQueued()
 	l.metricsCollector.UpdateQueueMetrics(len(l.eventChannel), maxParallelItem)
