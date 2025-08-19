@@ -73,6 +73,59 @@ func (s *LangfuseIntegrationTestSuite) Test_SendTrace() {
 	}, 10*time.Second, 100*time.Millisecond, "Trace event should be sent successfully")
 }
 
+func (s *LangfuseIntegrationTestSuite) Test_SendGeneration() {
+	generationEvent := NewTestGenerationEvent()
+
+	s.subject.AddEvent(context.TODO(), generationEvent)
+
+	s.Eventually(func() bool {
+		observationPath := fmt.Sprintf("/api/public/observations/%s", generationEvent.ID.String())
+		got, err := getEventType[types.GenerationEvent](s.cfg, observationPath)
+		if err != nil {
+			s.T().Logf("Failed to get generation event: %v", err)
+			return false
+		}
+
+		return s.Equal(generationEvent, got,
+			cmpopts.IgnoreFields(types.GenerationEvent{}, "StartTime", "CompletionStartTime", "EndTime"))
+	}, 10*time.Second, 100*time.Millisecond, "Generation event should be sent successfully")
+}
+
+func (s *LangfuseIntegrationTestSuite) Test_SendSpan() {
+	spanEvent := NewTestSpanEvent()
+
+	s.subject.AddEvent(context.TODO(), spanEvent)
+
+	s.Eventually(func() bool {
+		observationPath := fmt.Sprintf("/api/public/observations/%s", spanEvent.ID.String())
+		got, err := getEventType[types.SpanEvent](s.cfg, observationPath)
+		if err != nil {
+			s.T().Logf("Failed to get span event: %v", err)
+			return false
+		}
+
+		return s.Equal(spanEvent, got,
+			cmpopts.IgnoreFields(types.SpanEvent{}, "StartTime", "EndTime"))
+	}, 10*time.Second, 100*time.Millisecond, "Span event should be sent successfully")
+}
+
+func (s *LangfuseIntegrationTestSuite) Test_SendScore() {
+	scoreEvent := NewTestScoreEvent()
+
+	s.subject.AddEvent(context.TODO(), scoreEvent)
+
+	s.Eventually(func() bool {
+		scorePath := fmt.Sprintf("/api/public/scores/%s", scoreEvent.ID.String())
+		got, err := getEventType[types.ScoreEvent](s.cfg, scorePath)
+		if err != nil {
+			s.T().Logf("Failed to get score event: %v", err)
+			return false
+		}
+
+		return s.Equal(scoreEvent, got)
+	}, 10*time.Second, 100*time.Millisecond, "Score event should be sent successfully")
+}
+
 func (s *LangfuseIntegrationTestSuite) Equal(expected, got any, opts ...cmp.Option) bool {
 	less := func(a, b string) bool { return a < b }
 	opts = append(opts, cmpopts.SortSlices(less))
@@ -97,8 +150,15 @@ func getEventType[T any](cfg *config.Langfuse, path string) (*T, error) {
 		return nil, fmt.Errorf("failed to get event type: %w", err)
 	}
 
+	if r.StatusCode == 404 {
+		return nil, fmt.Errorf("event not found")
+	}
+
 	var t T
 	err = json.Unmarshal(r.RawBody, &t)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal response: %w, body: %s", err, string(r.RawBody))
+	}
 	return &t, err
 }
 
